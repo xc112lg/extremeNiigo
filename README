@@ -1,5 +1,9 @@
-Linux kernel
+extremeNiigo is currently in maintenance mode.
+(!) due to limited time, there will be no new features, bug fixes, or security patches released for this kernel until further notice.
+
+extremeNiigo kernel
 ============
+extremeNiigo is a performance-focused kernel fork for xiaomi blossom devices, based on https://github.com/TelegramAt25/niigo_kernel_xiaomi_blossom
 
 There are several guides for kernel developers and users. These guides can
 be rendered in a number of formats, like HTML and PDF. Please read
