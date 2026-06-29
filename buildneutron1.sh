@@ -152,14 +152,26 @@ completion() {
         echo -e "${LGR}Copying kernel to root: $root_kernel${NC}"
         cp "$output_kernel" "$root_kernel"
         
-        # Copy dtb.img if it exists
+        # Copy dtb.img if it exists, otherwise try to find and copy available dtb files
         if [[ -f "$dtb_img" ]]; then
             echo -e "${LGR}Copying dtb.img to: $output_dtb${NC}"
             cp "$dtb_img" "$output_dtb"
             echo -e "${LGR}Copying dtb.img to root: $root_dtb${NC}"
             cp "$dtb_img" "$root_dtb"
         else
-            echo -e "${RED}Warning: dtb.img not found at $dtb_img${NC}"
+            # Try to find mtk.dtb or other dtb files (MediaTek kernel)
+            if [[ -f "${objdir}/arch/arm64/boot/mtk.dtb" ]]; then
+                echo -e "${LGR}Found mtk.dtb instead of dtb.img${NC}"
+                echo -e "${LGR}Copying mtk.dtb to: $output_dtb${NC}"
+                cp "${objdir}/arch/arm64/boot/mtk.dtb" "$output_dtb"
+                echo -e "${LGR}Copying mtk.dtb to root: $root_dtb${NC}"
+                cp "${objdir}/arch/arm64/boot/mtk.dtb" "$root_dtb"
+            else
+                # List available dtb files for reference
+                echo -e "${RED}Warning: dtb.img and mtk.dtb not found at expected locations${NC}"
+                echo -e "${RED}Available DTB files:${NC}"
+                find "${objdir}/arch/arm64/boot" -name "*.dtb" 2>/dev/null | head -20
+            fi
         fi
         
         echo -e "${LGR}Output locations:${NC}"
