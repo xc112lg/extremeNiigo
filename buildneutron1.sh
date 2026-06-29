@@ -73,9 +73,9 @@ fi
 # === FUNCTION: Generate defconfig ===
 make_defconfig() {
     echo -e "${LGR}Generating defconfig...${NC}"
-    make -s ARCH=$ARCH O=$objdir $CONFIG_FILE -j$(nproc)
+    make -s ARCH=$ARCH O=$objdir $CONFIG_FILE
     if [ $? -ne 0 ]; then
-        echo -e "${LRD}Failed to generate defconfig${NC}"
+        echo -e "${LRD}Failed to load base defconfig${NC}"
         exit 1
     fi
 }
@@ -83,9 +83,40 @@ make_defconfig() {
 # === FUNCTION: Compile kernel ===
 compile() {
     BUILD_START=$(date +%s)
+    
+    # Generate answers for interactive kernel config prompts
+    # The order matches: JUMP_LABEL, STACKPROTECTOR, STACKPROTECTOR_STRONG, 
+    # LTO choice, CFI_CLANG, CFI_CLANG_SHADOW, SHADOW_CALL_STACK, SHADOW_CALL_STACK_VMAP,
+    # ARCH_MMAP_RND_BITS, ARCH_MMAP_RND_COMPAT_BITS, VMAP_STACK, REFCOUNT_FULL (repeated twice)
+    local answers=$(cat << 'EOF'
+n
+y
+y
+2
+y
+y
+y
+y
+18
+11
+n
+y
+y
+2
+y
+y
+y
+y
+y
+18
+11
+n
+y
+EOF
+)
 
     echo -e "${LGR}######### Compiling kernel #########${NC}"
-    make -j$(nproc --all) \
+    echo "$answers" | make -j$(nproc --all) \
         O="$objdir" \
         ARCH="arm64" \
         SUBARCH="arm64" \
@@ -161,16 +192,21 @@ completion() {
         else
             # Try to find mtk.dtb or other dtb files (MediaTek kernel)
             if [[ -f "${objdir}/arch/arm64/boot/mtk.dtb" ]]; then
-                echo -e "${LGR}Found mtk.dtb instead of dtb.img${NC}"
-                echo -e "${LGR}Copying mtk.dtb to: $output_dtb${NC}"
+                echo -e "${LGR}Found mtk.dtb, copying as dtb.img...${NC}"
                 cp "${objdir}/arch/arm64/boot/mtk.dtb" "$output_dtb"
-                echo -e "${LGR}Copying mtk.dtb to root: $root_dtb${NC}"
                 cp "${objdir}/arch/arm64/boot/mtk.dtb" "$root_dtb"
             else
-                # List available dtb files for reference
-                echo -e "${RED}Warning: dtb.img and mtk.dtb not found at expected locations${NC}"
-                echo -e "${RED}Available DTB files:${NC}"
-                find "${objdir}/arch/arm64/boot" -name "*.dtb" 2>/dev/null | head -20
+                # For MediaTek kernels with individual DTB files, copy the main ones
+                local primary_dtb="${objdir}/arch/arm64/boot/dts/mediatek/mt6765.dtb"
+                if [[ -f "$primary_dtb" ]]; then
+                    echo -e "${LGR}Copying mt6765.dtb as dtb.img...${NC}"
+                    cp "$primary_dtb" "$output_dtb"
+                    cp "$primary_dtb" "$root_dtb"
+                else
+                    echo -e "${RED}Warning: No suitable DTB files found${NC}"
+                    echo -e "${RED}Available DTB files:${NC}"
+                    find "${objdir}/arch/arm64/boot" -name "*.dtb" 2>/dev/null | head -20
+                fi
             fi
         fi
         
