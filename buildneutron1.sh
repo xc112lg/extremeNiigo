@@ -85,32 +85,14 @@ compile() {
     BUILD_START=$(date +%s)
     
     # Generate answers for interactive kernel config prompts
-    # The order matches: JUMP_LABEL, STACKPROTECTOR, STACKPROTECTOR_STRONG, 
-    # LTO choice, CFI_CLANG, CFI_CLANG_SHADOW, SHADOW_CALL_STACK, SHADOW_CALL_STACK_VMAP,
-    # ARCH_MMAP_RND_BITS, ARCH_MMAP_RND_COMPAT_BITS, VMAP_STACK, REFCOUNT_FULL (repeated twice)
+    # 2 = LTO_CLANG choice, then 6x y for remaining options
     local answers=$(cat << 'EOF'
-n
-y
-y
-2
-y
-y
-y
-y
-18
-11
-n
-y
-y
 2
 y
 y
 y
 y
 y
-18
-11
-n
 y
 EOF
 )
